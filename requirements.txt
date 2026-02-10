@@ -1,0 +1,22 @@
+# Data / ingestion
+datasets
+tqdm
+
+# API
+fastapi
+uvicorn
+python-dotenv
+streamlit
+requests
+
+# LangChain (modern)
+langchain
+langchain-core
+langchain-groq
+langchain-huggingface
+langchain-chroma
+langchain-text-splitters
+
+# Vector DB + embeddings
+chromadb
+sentence-transformers
