@@ -12,7 +12,7 @@ requests
 # LangChain (modern)
 langchain
 langchain-core
-langchain-groq
+langchain-ollama
 langchain-huggingface
 langchain-chroma
 langchain-text-splitters

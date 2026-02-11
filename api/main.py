@@ -1,14 +1,21 @@
+import os
 from fastapi import FastAPI
 from dotenv import load_dotenv
 
-from langchain_groq import ChatGroq
+from langchain_ollama import ChatOllama
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_chroma import Chroma
 from langchain_core.prompts import ChatPromptTemplate
 
 load_dotenv()
 
-app = FastAPI(title="Epstein RAG")
+app = FastAPI(title="Epstein RAG (Local)")
+
+# -----------------------------
+# Config
+# -----------------------------
+OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "qwen2.5:7b")
 
 # -----------------------------
 # Embeddings
@@ -34,19 +41,18 @@ retriever = db.as_retriever(
     }
 )
 
-
-
 # -----------------------------
-# LLM
+# LLM (Local Ollama)
 # -----------------------------
-llm = ChatGroq(
-    model="llama-3.3-70b-versatile",
+llm = ChatOllama(
+    base_url=OLLAMA_BASE_URL,
+    model=OLLAMA_MODEL,
     temperature=0,
-    max_tokens=500
+    num_predict=500
 )
 
 # -----------------------------
-# Prompt (CRITICAL FIX)
+# Prompt
 # -----------------------------
 prompt = ChatPromptTemplate.from_messages([
     (
@@ -64,6 +70,17 @@ prompt = ChatPromptTemplate.from_messages([
 ])
 
 # -----------------------------
+# Health check
+# -----------------------------
+@app.get("/health")
+def health():
+    return {
+        "status": "ok",
+        "ollama_url": OLLAMA_BASE_URL,
+        "model": OLLAMA_MODEL
+    }
+
+# -----------------------------
 # Endpoint
 # -----------------------------
 @app.post("/ask")
@@ -71,7 +88,8 @@ def ask(question: str):
     docs = retriever.invoke(question)
 
     print("Retrieved docs:", len(docs))
-    print(docs[0].page_content[:500])
+    if docs:
+        print(docs[0].page_content[:500])
 
     if not docs:
         return {"answer": "I could not find this information in the documents."}

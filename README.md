@@ -1,110 +1,128 @@
-# EpsteinFiles-RAG
-A RAG pipeline implementation built on the 'Epstein Files 20K' dataset from Hugging Face (Teyler).
+# Epstein Files RAG (Local Ollama Fork)
 
-![Recording 2026-02-10 230408](https://github.com/user-attachments/assets/e7378680-b113-442e-b112-7745197ade65)
+A RAG pipeline for querying the 'Epstein Files 20K' dataset, modified to run **completely locally** using Ollama instead of cloud APIs.
 
-Dataset source:  
-👉 https://huggingface.co/datasets/teyler/epstein-files-20k
+**Original repo:** [AnkitNayak-eth/EpsteinFiles-RAG](https://github.com/AnkitNayak-eth/EpsteinFiles-RAG)
 
----
+## Changes from Original
 
-##  What This Project Does
+- Replaced Groq (cloud LLM) with **Ollama** (local)
+- No API keys required
+- All queries stay on your machine
+- Configurable model via environment variables
 
-This system:
+## Requirements
 
-- Downloads **2+ million raw document lines**
-- Cleans and reconstructs documents by filename
-- Chunks documents into semantically meaningful pieces
-- Embeds them using Sentence Transformers
-- Stores embeddings in **ChromaDB**
-- Retrieves relevant context for a question
-- Uses an LLM **only on retrieved context**
-- Exposes a FastAPI backend
-- Provides a Streamlit UI for querying
+- Python 3.11+
+- [Ollama](https://ollama.ai) running locally
+- ~4GB disk space for embeddings
+- ~8GB RAM recommended
 
-⚠️ **The model is not allowed to hallucinate.**  
-If the answer is not present in the documents, it explicitly says so.
+## Quick Start
 
----
+### 1. Install Ollama and pull a model
 
-## Technical Architecture (High Level)
+```bash
+# Install Ollama: https://ollama.ai
+ollama pull qwen2.5:7b
+```
 
-Raw Dataset
-↓
+### 2. Clone and install dependencies
+
+```bash
+git clone https://github.com/jde-007/epstein-rag-local.git
+cd epstein-rag-local
+pip install -r requirements.txt
+```
+
+### 3. Configure (optional)
+
+```bash
+cp .env.example .env
+# Edit .env to change model or Ollama URL
+```
+
+Default config:
+- `OLLAMA_BASE_URL=http://localhost:11434`
+- `OLLAMA_MODEL=qwen2.5:7b`
+
+### 4. Run the pipeline
+
+```bash
+# Download dataset (~2M lines)
+python ingest/download_dataset.py
+
+# Clean and reconstruct documents
+python ingest/clean_dataset.py
+
+# Chunk into semantic pieces
+python ingest/chunk_dataset.py
+
+# Embed into ChromaDB (takes a while)
+python ingest/embed_chunks.py
+```
+
+### 5. Start the API and UI
+
+```bash
+# Terminal 1: API server
+uvicorn api.main:app --reload
+
+# Terminal 2: Streamlit UI
+streamlit run app.py
+```
+
+- API: http://127.0.0.1:8000
+- UI: http://127.0.0.1:8501
+
+## Configuration
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `OLLAMA_BASE_URL` | `http://localhost:11434` | Ollama server URL |
+| `OLLAMA_MODEL` | `qwen2.5:7b` | Model to use for generation |
+
+Recommended models (by capability):
+- `qwen2.5:7b` - Good balance of speed and quality
+- `llama3.2:3b` - Faster, lighter
+- `qwen2.5:32b` - Better quality, slower
+
+## Architecture
+
+```
+Raw Dataset (HuggingFace)
+        ↓
 Cleaning & Reconstruction
-↓
+        ↓
 Semantic Chunking
-↓
-Vector Embeddings
-↓
-Chroma Vector Database
-↓
-Retriever (MMR / similarity)
-↓
-LLM (Groq – LLaMA 3.3)
-↓
-Answer (Context-only)
+        ↓
+Vector Embeddings (sentence-transformers)
+        ↓
+ChromaDB Vector Store
+        ↓
+Retriever (MMR)
+        ↓
+Ollama LLM (local)
+        ↓
+Grounded Answer
+```
 
-## 🔄 Pipeline (Run in Order)
+## API Endpoints
 
-1. Download the dataset  
-   Run:
-   python ingest/download_dataset.py  
-   → Saves raw data to `data/raw.json`
+- `GET /health` - Check status and config
+- `POST /ask?question=...` - Query the documents
 
-2. Clean and reconstruct documents  
-   Run:
-   python ingest/clean_dataset.py  
-   → Removes junk rows and rebuilds documents by filename  
-   → Output: `data/cleaned.json`
+## Data Source
 
-3. Chunk documents  
-   Run:
-   python ingest/chunk_dataset.py  
-   → Splits documents into semantic chunks with metadata  
-   → Output: `data/chunks.json`
+Dataset: [teyler/epstein-files-20k](https://huggingface.co/datasets/teyler/epstein-files-20k)
 
-4. Embed chunks into vector database  
-   Run:
-   python ingest/embed_chunks.py  
-   → Stores embeddings in `chroma_db/`
+⚠️ **Disclaimer:** This dataset contains unverified, potentially incomplete or inaccurate information. It should be used for research and educational purposes only.
 
-5. Start the API server  
-   Run:
-   uvicorn api.main:app --reload  
-   → API available at http://127.0.0.1:8000
+## License
 
-6. Start the UI (new terminal)  
-   Run:
-   streamlit run app.py
+MIT (same as original)
 
-## 🧰 Tech Stack
+## Credits
 
-- Python 3.11
-- Hugging Face Datasets
-- LangChain (Core, HuggingFace, Chroma, Groq)
-- ChromaDB (Vector Database)
-- Sentence Transformers
-- FastAPI + Uvicorn
-- Streamlit
-- Groq LLaMA 3.3 (70B)
-
----
-
-## 👤 Author
-
-Built by **Ankit Kumar Nayak**  
-Full-Stack Developer | AI & RAG Systems
-
----
-
-## 💬 Support
-
-If you encounter issues or want to extend this project:
-- Open an issue on the repository
-- Suggest improvements or optimizations
-- Fork and experiment responsibly
-
-This project is built for **transparency, research, and learning**.
-
-
+- Original implementation: [Ankit Kumar Nayak](https://github.com/AnkitNayak-eth)
+- Local Ollama adaptation: [jde-007](https://github.com/jde-007)
