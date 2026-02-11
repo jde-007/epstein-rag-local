@@ -3,7 +3,7 @@ from fastapi import FastAPI
 from dotenv import load_dotenv
 
 from langchain_ollama import ChatOllama
-from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_ollama import OllamaEmbeddings
 from langchain_chroma import Chroma
 from langchain_core.prompts import ChatPromptTemplate
 
@@ -16,12 +16,14 @@ app = FastAPI(title="Epstein RAG (Local)")
 # -----------------------------
 OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
 OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "qwen2.5:7b")
+OLLAMA_EMBED_MODEL = os.getenv("OLLAMA_EMBED_MODEL", "nomic-embed-text")
 
 # -----------------------------
-# Embeddings
+# Embeddings (Ollama - GPU accelerated)
 # -----------------------------
-embeddings = HuggingFaceEmbeddings(
-    model_name="sentence-transformers/all-MiniLM-L6-v2"
+embeddings = OllamaEmbeddings(
+    base_url=OLLAMA_BASE_URL,
+    model=OLLAMA_EMBED_MODEL
 )
 
 # -----------------------------

@@ -1,10 +1,16 @@
+import os
 import json
 import shutil
 from pathlib import Path
+from dotenv import load_dotenv
 from langchain_chroma import Chroma
-from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_ollama import OllamaEmbeddings
+
+load_dotenv()
 
 CHROMA_DIR = "chroma_db"
+OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+EMBED_MODEL = os.getenv("OLLAMA_EMBED_MODEL", "nomic-embed-text")
 
 # --------------------------------------------------
 # Reset Chroma DB
@@ -25,12 +31,14 @@ total_chunks = len(chunks)
 print(f"✅ Loaded {total_chunks} chunks")
 
 # --------------------------------------------------
-# Load embedding model
+# Load embedding model (Ollama - GPU accelerated)
 # --------------------------------------------------
-print("🧠 Loading embedding model...")
+print(f"🧠 Loading Ollama embedding model: {EMBED_MODEL}")
+print(f"   Server: {OLLAMA_BASE_URL}")
 
-embeddings = HuggingFaceEmbeddings(
-    model_name="sentence-transformers/all-MiniLM-L6-v2"
+embeddings = OllamaEmbeddings(
+    base_url=OLLAMA_BASE_URL,
+    model=EMBED_MODEL
 )
 
 print("✅ Embedding model ready")
@@ -49,12 +57,13 @@ db = Chroma(
 # --------------------------------------------------
 # Embed in batches
 # --------------------------------------------------
-BATCH = 1000
+BATCH = 500  # Smaller batches for network calls
 print(f"🚀 Starting embedding in batches of {BATCH}")
 
 for i in range(0, total_chunks, BATCH):
     end = min(i + BATCH, total_chunks)
-    print(f"🔹 Embedding chunks {i + 1} → {end} / {total_chunks}")
+    pct = (end / total_chunks) * 100
+    print(f"🔹 Embedding chunks {i + 1} → {end} / {total_chunks} ({pct:.1f}%)")
 
     db.add_texts(
         texts=[c["text"] for c in chunks[i:end]],
