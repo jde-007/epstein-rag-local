@@ -81,8 +81,9 @@ streamlit run app.py
 |----------|---------|-------------|
 | `OLLAMA_BASE_URL` | `http://localhost:11434` | Ollama server URL |
 | `OLLAMA_MODEL` | `qwen2.5:7b` | Model to use for generation |
+| `OLLAMA_EMBED_MODEL` | `nomic-embed-text` | Model for embeddings |
 
-Recommended models (by capability):
+Recommended generation models:
 - `qwen2.5:7b` - Good balance of speed and quality
 - `llama3.2:3b` - Faster, lighter
 - `qwen2.5:32b` - Better quality, slower
@@ -96,16 +97,21 @@ Cleaning & Reconstruction
         ↓
 Semantic Chunking
         ↓
-Vector Embeddings (sentence-transformers)
+Vector Embeddings (Ollama GPU)
         ↓
 ChromaDB Vector Store
         ↓
 Retriever (MMR)
         ↓
-Ollama LLM (local)
+Ollama LLM (local GPU)
         ↓
 Grounded Answer
 ```
+
+Embedding models (speed vs quality):
+- `nomic-embed-text` - Fast, good quality (recommended)
+- `mxbai-embed-large` - Better quality, slower
+- `bge-m3` - Best quality, slowest
 
 ## API Endpoints
 
